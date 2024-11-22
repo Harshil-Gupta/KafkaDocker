@@ -1,0 +1,1 @@
+# Kafka consumer for reading and processing data
