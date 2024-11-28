@@ -1,0 +1,29 @@
+2024-11-29 03:43:11,370 - INFO - Running test case 1: Valid message with all required fields
+2024-11-29 03:43:11,375 - INFO - Produced message to processed-user-login: {'user_id': '3f66403c-b046-4909-a853-167ea2c2a6ef', 'app_version': '1.0.0', 'device_type': 'android', 'device_id': '5b32dd52-ffe2-4f2f-92e6-e12bff77bbf6', 'locale': 'US', 'ip': '16.108.69.154', 'timestamp': 1732791315, 'processed_at': '2024-11-29 03:43:11'}
+2024-11-29 03:43:11,375 - INFO - Running test case 2: Edge case: Unix epoch timestamp
+2024-11-29 03:43:11,379 - INFO - Produced message to processed-user-login: {'user_id': '71148673-b653-4db3-8a0c-1f372425e42b', 'app_version': '1.0.0', 'device_type': 'android', 'device_id': '57e4bddf-e3ef-4533-9d32-8328d2586b9a', 'locale': 'US', 'ip': '16.108.69.154', 'timestamp': 0, 'processed_at': '2024-11-29 03:43:11'}
+2024-11-29 03:43:11,380 - INFO - Running test case 3: Invalid message: Missing fields
+2024-11-29 03:43:11,380 - ERROR - Extraction failed: 'Missing required field: app_version'
+2024-11-29 03:43:11,380 - INFO - Routing invalid message to DLQ
+2024-11-29 03:43:12,379 - INFO - Produced message to dlq-topic: {'user_id': 'b315ed16-4162-48d1-9761-96744280ada3', 'locale': 'IN', 'timestamp': 1732791315}
+2024-11-29 03:43:12,380 - INFO - Running test case 4: Invalid Timestamp: Not Integer Format
+2024-11-29 03:43:12,381 - ERROR - Extraction failed: Field 'timestamp' expected <class 'int'>, got <class 'str'>
+2024-11-29 03:43:12,381 - INFO - Routing invalid message to DLQ
+2024-11-29 03:43:12,383 - INFO - Produced message to dlq-topic: {'user_id': 'fce35a3b-17b3-45c9-8b05-c1a08c824b95', 'app_version': '3.0.0', 'ip': '16.108.69.154', 'locale': 'US', 'device_id': 'a58f9a02-2cfb-499a-aa19-410cf77c3763', 'timestamp': 'not-a-timestamp', 'device_type': 'android'}
+2024-11-29 03:43:12,384 - INFO - Running test case 5: Invalid IP Address
+2024-11-29 03:43:12,384 - ERROR - ETL pipeline failed: Invalid IP address: 16.108.69.154.54
+2024-11-29 03:43:12,384 - INFO - Running test case 6: Filtered Locale
+2024-11-29 03:43:12,384 - INFO - Message filtered out due to locale 'RU': {'user_id': 'e0b08584-b430-4feb-9b87-4d6dec7c810f', 'app_version': '1.0.0', 'device_type': 'android', 'device_id': '15589014-2772-4b97-abdb-b8ac9de748d2', 'locale': 'RU', 'ip': '16.108.69.154', 'timestamp': 1732791315}
+2024-11-29 03:43:12,385 - INFO - Routing invalid message to DLQ
+2024-11-29 03:43:12,397 - INFO - Produced message to dlq-topic: {'user_id': 'e0b08584-b430-4feb-9b87-4d6dec7c810f', 'app_version': '1.0.0', 'ip': '16.108.69.154', 'locale': 'RU', 'device_id': '15589014-2772-4b97-abdb-b8ac9de748d2', 'timestamp': 1732791315, 'device_type': 'android'}
+2024-11-29 03:43:12,398 - INFO - Running test case 7: Empty Message
+2024-11-29 03:43:12,398 - ERROR - Extraction failed: 'Missing required field: user_id'
+2024-11-29 03:43:12,398 - INFO - Routing invalid message to DLQ
+2024-11-29 03:43:12,400 - INFO - Produced message to dlq-topic: {}
+2024-11-29 03:43:12,401 - INFO - Running test case 8: Extra Fields
+2024-11-29 03:43:12,401 - WARNING - Extra fields found and removed: {'extra_field'}
+2024-11-29 03:43:12,403 - INFO - Produced message to processed-user-login: {'user_id': 'c578a043-0bcc-4bef-8e23-f74666237890', 'app_version': '1.0.0', 'device_type': 'ios', 'device_id': 'd337ed94-5330-47c5-89b2-df59f1ce4794', 'locale': 'US', 'ip': '16.108.69.154', 'timestamp': 1732791315, 'processed_at': '2024-11-29 03:43:12'}
+2024-11-29 03:43:12,403 - INFO - Running test case 9: Invalid User ID
+2024-11-29 03:43:12,403 - ERROR - Extraction failed: Field 'user_id' expected <class 'str'>, got <class 'int'>
+2024-11-29 03:43:12,404 - INFO - Routing invalid message to DLQ
+2024-11-29 03:43:12,406 - INFO - Produced message to dlq-topic: {'user_id': 12345, 'app_version': '2.0.0', 'ip': '16.108.69.154', 'locale': 'US', 'device_id': '9afb9dbc-02cd-47a8-92c0-2f5a07b3b37e', 'timestamp': 1732791315, 'device_type': 'android'}

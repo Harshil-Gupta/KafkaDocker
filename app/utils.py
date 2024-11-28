@@ -240,6 +240,7 @@ if __name__ == "__main__":
     ]
 
 
-    for i, case in enumerate(test_cases, 1):
-        logger.info(f"Running test case {i}")
-        process_message(case)
+# Run tests
+for i, case in enumerate(test_cases, 1):
+    logger.info(f"Running test case {i}: {case['description']}")
+    process_message(case["message"])
