@@ -2,22 +2,11 @@
 from confluent_kafka import Producer
 import json
 from datetime import datetime
+
 from utils import setup_logger
-import uuid
 logger = setup_logger()
 
 KAFKA_BROKER = "localhost:29092"
-def random_id():
-    return str(uuid.uuid4())
-
-data = {
-    "user_id": random_id(),
-    "app_version": "2.0.1",
-    "locale": "US",
-    "device_id":random_id(),
-    "timestamp": datetime.now(),
-    "device_type": "android"
-}
 
 def produce_message(data, topic):
     """Produces a message to a Kafka topic."""
@@ -43,5 +32,3 @@ def produce_message(data, topic):
         logger.info(f"Produced message to {topic}: {data}")
     except Exception as e:
         logger.error(f"Failed to produce message: {e}")
-
-produce_message(data, "processed-user-login")

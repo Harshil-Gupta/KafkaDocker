@@ -1,2 +1,6 @@
 # Python dependencies
 confluent-kafka
+uuid
+json
+datetime
+logging
