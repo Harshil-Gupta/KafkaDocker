@@ -3,5 +3,7 @@ confluent-kafka
 uuid
 json
 datetime
+logging_config
 logging
 ipaddress
+time

@@ -2,12 +2,11 @@ from confluent_kafka import Producer
 import json
 from datetime import datetime
 from logging_config import setup_logger
-
-logger = setup_logger()
+from time import sleep
 
 KAFKA_BROKER = "localhost:29092"
-
 producer = Producer({"bootstrap.servers": KAFKA_BROKER})
+logger = setup_logger()
 
 def produce_message(data, topic, key=None, max_retries=3):
     """
@@ -21,16 +20,20 @@ def produce_message(data, topic, key=None, max_retries=3):
     def delivery_report(err, msg):
         """Delivery report callback."""
         if err is not None:
-            logger.error(f"Message delivery failed: {err}")
-        else:
-            logger.info(f"Message delivered to {msg.topic()} [{msg.partition()}]")
+            logger.error(f"Message delivery to {msg.topic()} failed: {err}")
 
     try:
+        # Serialize the message
         if isinstance(data.get("timestamp"), datetime):
             data["timestamp"] = data["timestamp"].isoformat()
 
-        json_data = json.dumps(data)
+        try:
+            json_data = json.dumps(data)
+        except TypeError as e:
+            logger.error(f"Payload serialization failed: {e}. Payload: {data}")
+            return
 
+        # Retry logic with backoff
         for attempt in range(1, max_retries + 1):
             try:
                 producer.produce(
@@ -41,7 +44,10 @@ def produce_message(data, topic, key=None, max_retries=3):
                 break
             except Exception as e:
                 logger.error(f"Attempt {attempt} failed: {e}")
-                if attempt == max_retries:
+                if attempt < max_retries:
+                    sleep(1)  # Backoff before retrying
+                else:
+                    logger.error(f"Failed to produce message to {topic} after {max_retries} attempts. Payload: {data}")
                     raise
     except Exception as e:
         logger.error(f"Failed to produce message: {e}")

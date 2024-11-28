@@ -63,13 +63,7 @@ def transform_message(message):
             logger.info(f"Message filtered out due to locale 'RU': {message}")
             return None
 
-        # Convert timestamp to ISO 8601 human-readable format 
-        # Not required
-        # message["timestamp"] = datetime.fromtimestamp(
-        #     int(message["timestamp"])
-        # ).strftime('%Y-%m-%d %H:%M:%S')
-
-        # Example: Enrich the message (adding a new field)
+        # Adding a new field (Processed Time)
         message["processed_at"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         return message
@@ -90,10 +84,17 @@ def load_message(message, destination, max_retries=3, dlq_topic = "dlq-topic"):
         produce_message(data=message, topic=destination, max_retries=max_retries)
     except Exception as e:
         logger.error(f"Failed to load message to {destination} after {max_retries} retries: {e}")
-        # Route to undeliverable message to Dead Letter Queue (DLQ)
+        # Route undeliverable message to Dead Letter Queue
         try:
+            detailed_message = {
+                **message,
+                "error_reason": str(e),
+                "original_topic": destination,
+                "routed_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            }
             logger.info(f"Routing message to DLQ: {dlq_topic}")
-            produce_message(data=message, topic=dlq_topic)
+            produce_message(data=detailed_message, topic=dlq_topic)
+            logger.info(f"Message successfully routed to DLQ: {detailed_message}")
         except Exception as dlq_error:
             logger.critical(f"Failed to route message to DLQ: {dlq_error}")
 
@@ -102,7 +103,7 @@ def process_message(message):
     Complete ETL pipeline:
     - Extract, transform, and load the incoming message.
     - Handle errors gracefully during each stage.
-    - Fallback to DLQ in case of error message
+    - Fallback to DLQ in case of transformation or loading failure.
     """
     try:
         # Extract phase
@@ -111,7 +112,7 @@ def process_message(message):
             logger.info("Routing invalid message to DLQ")
             load_message(message, destination="dlq-topic")
             return None
-
+      
         # Transform phase
         transformed_message = transform_message(extracted_message)
         if not transformed_message:
@@ -120,9 +121,9 @@ def process_message(message):
             return None
 
         # Load phase
-        load_message(transformed_message,"processed-user-login",max_retries=3) 
+        load_message(transformed_message, "processed-user-login", max_retries=3)
         return transformed_message
-    
+      
     except Exception as e:
         logger.error(f"ETL pipeline failed: {e}")
         return None
@@ -131,8 +132,10 @@ if __name__ == "__main__":
     from uuid import uuid4
 
     test_cases = [
-        # Valid Message
-        {
+        # Valid Messages
+    {
+        "description": "Valid message with all required fields",
+        "message": {
             "user_id": str(uuid4()),
             "app_version": "1.0.0",
             "ip": "16.108.69.154",
@@ -141,8 +144,11 @@ if __name__ == "__main__":
             "timestamp": 1732791315,
             "device_type": "android",
         },
-        # Edge Case Timestamp
-        {
+    },
+    # Edge Cases
+    {
+        "description": "Edge case: Unix epoch timestamp",
+        "message": {
             "user_id": str(uuid4()),
             "app_version": "1.0.0",
             "ip": "16.108.69.154",
@@ -151,14 +157,20 @@ if __name__ == "__main__":
             "timestamp": 0,
             "device_type": "android",
         },
-        # Missing Fields
-        {
+    },
+    # Invalid Messages
+    {
+        "description": "Invalid message: Missing fields",
+        "message": {
             "user_id": str(uuid4()),
             "locale": "IN",
             "timestamp": 1732791315,
         },
-        # Invalid Timestamp
-        {
+    },
+    # Invalid Timestamp
+    {
+        "description": "Invalid Timestamp: Not Integer Format",
+        "message": {
             "user_id": str(uuid4()),
             "app_version": "3.0.0",
             "ip": "16.108.69.154",
@@ -167,18 +179,24 @@ if __name__ == "__main__":
             "timestamp": "not-a-timestamp",
             "device_type": "android",
         },
+    },
+    {
         # Invalid IP Address
-        {
+        "description": "Invalid IP Address",
+        "message": {
             "user_id": str(uuid4()),
             "app_version": "3.0.0",
-            "ip": "16.108.69.15454",
+            "ip": "16.108.69.154.54",
             "locale": "US",
             "device_id": str(uuid4()),
-            "timestamp": "not-a-timestamp",
+            "timestamp": 1732791315,
             "device_type": "android",
         },
-        # Filtered Locale [In case, we want to add custom transformation logic to skip particular data]
-        {
+    },
+    {
+        # Filtered Locale (In case, we want to add custom transformation logic to skip particular data)
+        "description": "Filtered Locale",
+        "message": {
             "user_id": str(uuid4()),
             "app_version": "1.0.0",
             "ip": "16.108.69.154",
@@ -187,30 +205,40 @@ if __name__ == "__main__":
             "timestamp": 1732791315,
             "device_type": "android",
         },
-        # Empty Message
-        {},
+    },
+    {
+        "description": "Empty Message",
+        "message": {}
+    },
+    {
         # Extra Fields
-        {
+        "description": "Extra Fields",
+        "message": {
             "user_id": str(uuid4()),
             "app_version": "1.0.0",
-            "ip": "16.108.69.15454",
+            "ip": "16.108.69.154",
             "locale": "US",
             "device_id": str(uuid4()),
             "timestamp": 1732791315,
             "device_type": "ios",
             "extra_field": "unexpected_value",
-        },
-        # Invalid Field Type
-        {
+        }
+    },
+    {
+        # Invalid Field Type Apart from Timestamp
+        "description": "Invalid User ID",
+        "message": {
             "user_id": 12345,
             "app_version": "2.0.0",
-            "ip": "16.108.69.15454",
+            "ip": "16.108.69.154",
             "locale": "US",
             "device_id": str(uuid4()),
             "timestamp": 1732791315,
             "device_type": "android",
-        },
+        }
+    }
     ]
+
 
     for i, case in enumerate(test_cases, 1):
         logger.info(f"Running test case {i}")
