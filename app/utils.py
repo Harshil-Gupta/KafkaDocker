@@ -62,7 +62,7 @@ def transform_message(message):
         ).strftime('%Y-%m-%d %H:%M:%S')
 
         # Example: Enrich the message (adding a new field)
-        message["processed_at"] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        message["processed_at"] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         return message
     except Exception as e:
